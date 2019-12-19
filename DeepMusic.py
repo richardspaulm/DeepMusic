@@ -1,4 +1,5 @@
 import midi
+import pandas as pd
 from pprint import pprint
 class MF_Utils:
     def __init__(self, filepath):
@@ -40,16 +41,50 @@ class MF_Utils:
         for track in tracks:
             pattern.append(track)
         midi.write_midifile(output, pattern)
-    
-    # def create_concat_mid(self, evt_lists, output):
 
+    def desired_event(self, evt):
+        if isinstance(evt, midi.events.NoteOnEvent):
+            return True
+        if isinstance(evt, midi.events.ControlChangeEvent):
+            return True
+        if isinstance(evt, midi.events.ProgramChangeEvent):
+            return True
+        return False
+
+    def set_row_type(self, track_info, evt):
+        if isinstance(evt, midi.events.NoteOnEvent):
+            track_info["note_on"].append(1)
+            track_info["control"].append(0)
+            track_info["program"].append(0)
+            return track_info
+        elif isinstance(evt, midi.events.ControlChangeEvent):
+            track_info["control"].append(1)
+            track_info["note_on"].append(0)
+            track_info["program"].append(0)
+            return track_info
+        elif isinstance(evt, midi.events.ProgramChangeEvent):
+            track_info["program"].append(1)
+            track_info["control"].append(0)
+            track_info["note_on"].append(0)
+            return track_info
+        else:
+            return None
+
+    def create_df_from_track(self, track):
+        track_info = {"tick":[], "data1": [], "data2": [], "note_on": [], "control": [], "program": []}
+        for evt in track:
+            if not self.desired_event(evt):
+                continue
+            track_info = self.set_row_type(track_info, evt)
+            track_info["tick"].append(evt.tick)
+            track_info["data1"].append(evt.data[0])
+            try:
+                track_info["data2"].append(evt.data[2])
+            except:
+                track_info["data2"].append(0)
+        return pd.DataFrame(track_info)
 
 mf = MF_Utils("midi_files/gerudo.mid")
-
-# # tracks = [mf.extract_single_track(1)]
-tracks = mf.extract_all_tracks()
-tracks = mf.concat_all_track_evts(tracks)
-mf.tracks_to_mid([tracks], "test.mid")
-
-# mf2 = MF_Utils("test.mid")
-# print(mf2.extract_single_track(0))
+track = mf.extract_single_track()
+df = mf.create_df_from_track(track)
+print(df)
