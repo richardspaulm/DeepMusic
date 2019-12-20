@@ -1,3 +1,5 @@
 /__pycache__/*
 /.vscode/*
 /*.mid
+midi_downloads/*
+/midi_files
