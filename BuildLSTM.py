@@ -9,6 +9,7 @@ import numpy as np
 import random
 import sys
 import io
+from gensim import build
 # sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 from keras import backend as K
@@ -18,23 +19,36 @@ with open("all_corp.txt", encoding="utf-8") as f:
     text = f.read()
 print('corpus length:', len(text))
 
-chars = sorted(list(set(text)))
+
+
+
+chars = sorted(list(set(text.split(" "))))
 print('total chars:', len(chars))
+
 char_indices = dict((c, i) for i, c in enumerate(chars))
 indices_char = dict((i, c) for i, c in enumerate(chars))
-
+# print(indices_char)
+# exit()
 # cut the text in semi-redundant sequences of maxlen characters
-maxlen = 52
-step = 13
+maxlen = 11
+step = 20
 sentences = []
 next_chars = []
-for i in range(0, len(text) - maxlen, step):
-    sentences.append(text[i: i + maxlen])
-    next_chars.append(text[i + maxlen])
-print('nb sequences:', len(sentences))
+# for i in range(0, len(text) - maxlen, step):
+#     print(i)
+#     sentences.append(text[i: i + maxlen])
+#     next_chars.append(text[i + maxlen])
 
+for i in range(len(chars) - 1):
+    sentences.append(chars[i])
+    next_chars.append(chars[i + 1])
+sentences.pop()
+print('nb sequences:', len(sentences))
+# print(len(sentences))
+# print(len(next_chars))
 print('Vectorization...')
-x = np.zeros((len(sentences), maxlen, len(chars)), dtype=np.bool)
+
+x = np.zeros((len(sentences), 1, len(chars)), dtype=np.bool)
 y = np.zeros((len(sentences), len(chars)), dtype=np.bool)
 for i, sentence in enumerate(sentences):
     for t, char in enumerate(sentence):

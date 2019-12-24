@@ -3,3 +3,6 @@
 /*.mid
 midi_downloads/*
 /midi_files
+*.csv
+*.hdf5
+k2_train/*.hdf5
