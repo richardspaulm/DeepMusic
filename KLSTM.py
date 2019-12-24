@@ -36,14 +36,14 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 		agg.dropna(inplace=True)
 	return agg
 
-dataset = read_csv("k3_train/portal.csv", index_col=0)
+dataset = read_csv("k3_train/full_midi.csv", index_col=0)
 print(dataset.head())
-columns_to_predict = 4
+columns_to_predict = 3
 
 values = dataset.values
 print(values)
-encoder = LabelEncoder()
-values[:,3] = encoder.fit_transform(values[:,3])
+# encoder = LabelEncoder()
+# values[:,3] = encoder.fit_transform(values[:,3])
 
 values = values.astype('float32')
 
@@ -52,12 +52,12 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 print(values)
 
-reframed = series_to_supervised(scaled, 1, 1)
+reframed = series_to_supervised(scaled, 20, 1)
 print(reframed.head())
 
 values = reframed.values
 
-n_train_rows = int(len(values) * .67)
+n_train_rows = int(len(values) * .75)
 train = values[:n_train_rows, :]
 test = values[n_train_rows:, :]
 
@@ -70,44 +70,48 @@ train_X = train_X.reshape((train_X.shape[0], 1, train_X.shape[1]))
 test_X = test_X.reshape((test_X.shape[0], 1, test_X.shape[1]))
 
 model = Sequential()
-model.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-model.add(Dense(4))
-model.compile(loss='mae', optimizer='adam')
+model.add(LSTM(200,input_shape=(train_X.shape[1], train_X.shape[2])))
+model.add(Dense(3))
+model.compile(loss='mae', optimizer='adagrad')
 # fit network
-history = model.fit(train_X, train_y, epochs=20, batch_size=72, validation_data=(test_X, test_y), verbose=2, shuffle=False)
+history = model.fit(train_X, train_y, epochs=50, batch_size=128, validation_data=(test_X, test_y), verbose=2, shuffle=False)
 # plot history
 pyplot.plot(history.history['loss'], label='train')
 pyplot.plot(history.history['val_loss'], label='test')
 pyplot.legend()
-# pyplot.show()
+model.save("final_model.hdf5")
+pyplot.show()
 def round_of_rating(number):
     return [ceil(num) for num in number]    
-yhat = model.predict(test_X)
-print(dataset.head())
+
+print("Predicting")
+yhat = model.predict(train_X[:200])
+print("Inverting Scale")
 yhat = scaler.inverse_transform(yhat)
-y = encoder.inverse_transform(round_of_rating(yhat[:, 3]))
-print(y)
+# y = encoder.inverse_transform(round_of_rating(yhat[:, 3]))
+# print(y)
 
-output = np.zeros(yhat.shape)
-output[:, 3] = yhat[:, 3].astype(str)
-output[:, :3] = yhat[:, :3]
-df = DataFrame(output)
-print(df)
-nrows = len(df.iloc[:, 0])
+df = DataFrame(yhat)
+# output = np.zeros(yhat.shape)
+# # output[:, 3] = yhat[:, 3].astype(str)
+# # output[:, :3] = yhat[:, :3]
+# df = DataFrame(output)
+# print(df)
+# nrows = len(df.iloc[:, 0])
 
-def round_df(df, cols=3):
-    for i in range(cols):
-        nrows = len(df.iloc[:, i])
-        for j in range(nrows):
-            df.iloc[j, i] = int(df.iloc[j, i])
+# def round_df(df, cols=3):
+#     for i in range(cols):
+#         nrows = len(df.iloc[:, i])
+#         for j in range(nrows):
+#             df.iloc[j, i] = int(df.iloc[j, i])
 
-for i in range(nrows):
-    df.iloc[i, 3] = y[i]
+# # for i in range(nrows):
+#     # df.iloc[i, 3] = y[i]
 
-for r in range(nrows):
-    for c in range(3):
-        df.iloc[r, c] = int(df.iloc[r,c])
+# # for r in ran/ge(nrows):
+#     # for c in range(3):
+#         # df.iloc[r, c] = int(df.iloc[r,c])
 
-# df = round_df(df)
-print(df)
+# # df = round_df(df)
+# print(df)
 df.to_csv("mid_predictions.csv")
