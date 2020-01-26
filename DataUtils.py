@@ -320,8 +320,8 @@ class MF_Utils:
 
 
 mf = MF_Utils("midi_downloads/Portal_-_Still_Alive.mid")
-mf.notes_only_csv_to_mid("mid_predictions.csv")
-
+# mf.notes_only_csv_to_mid("mid_predictions.csv")
+mf.fpath_to_mid("output_txt.txt", "new.mid")
 # df = mf.create_df_from_dir("midi_downloads")
 # print(df.head(100))
 # print(df.describe())
